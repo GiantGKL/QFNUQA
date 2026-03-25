@@ -1,0 +1,21 @@
+{
+  "name": "qfnuqa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "曲阜师范大学 QA 问答平台",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:server": "npm run dev --workspace=apps/server",
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspace=apps/server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.0"
+  }
+}
