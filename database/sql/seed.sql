@@ -114,7 +114,7 @@ INSERT INTO qa_items (id, question, answer, category_id, view_count) VALUES
 
 -- 教务相关
 (17, '如何登录教务系统？',
-'教务系统登录地址为 http://jwxt.qfnu.edu.cn，使用学号作为用户名，初始密码为身份证后6位。首次登录后请及时修改密码。',
+'教务系统登录地址为 http://zhjw.qfnu.edu.cn，使用学号作为用户名，初始密码为身份证后6位。首次登录后请及时修改密码。',
 3, 1400),
 
 (18, '选课时间是什么时候？怎么选课？',
