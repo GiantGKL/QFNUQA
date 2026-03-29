@@ -12,6 +12,7 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:server": "npm run dev --workspace=apps/server",
     "build": "npm run build --workspaces",
+    "build:web": "cd apps/web && npm install && npm run build",
     "start": "npm run start --workspace=apps/web"
   },
   "devDependencies": {
