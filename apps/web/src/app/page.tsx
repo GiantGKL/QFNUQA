@@ -278,6 +278,23 @@ export default function Home() {
           qaId={selectedQAId}
           onClose={() => setSelectedQAId(null)}
         />
+
+        {/* 页脚 */}
+        <Box sx={{ mt: 6, pt: 3, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            数据来源：
+            <Box
+              component="a"
+              href="https://github.com/W1ndys/Easy-QFNU"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            >
+              Easy-QFNU
+            </Box>
+            {' '}by W1ndys
+          </Typography>
+        </Box>
       </Container>
     </Box>
   );
