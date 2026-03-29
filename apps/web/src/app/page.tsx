@@ -285,7 +285,7 @@ export default function Home() {
             数据来源：
             <Box
               component="a"
-              href="https://github.com/W1ndys/Easy-QFNU"
+              href="https://github.com/W1ndys/easy-qfnu-uniapp"
               target="_blank"
               rel="noopener noreferrer"
               sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
