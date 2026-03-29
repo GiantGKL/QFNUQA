@@ -1,7 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { callZhipuAI } from '@/lib/ai';
 
+interface ZhipuMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface ZhipuResponse {
+  choices: {
+    message: {
+      content: string;
+    };
+  }[];
+}
+
+async function callZhipuAI(messages: ZhipuMessage[]): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(process.env.ZHIPU_API_URL!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.ZHIPU_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'glm-4-flash',
+        messages,
+        temperature: 0.7,
+        max_tokens: 512,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`AI API Error: ${response.status} - ${error}`);
+    }
+
+    const data = (await response.json()) as ZhipuResponse;
+    return data.choices[0]?.message?.content || '抱歉，AI 暂时无法回答。';
+  } catch (error) {
+    clearTimeout(timeout);
+    if ((error as Error).name === 'AbortError') {
+      throw new Error('AI 请求超时');
+    }
+    throw error;
+  }
+}
+
+// AI 智能搜索
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -9,31 +60,62 @@ export async function GET(request: NextRequest) {
     const pageSize = searchParams.get('pageSize') || '6';
 
     if (!keyword) {
-      return NextResponse.json({ success: false, error: '请输入搜索关键词' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: '请输入搜索关键词' },
+        { status: 400 }
+      );
     }
 
     const keywordStr = String(keyword);
 
     // 提取核心关键词
-    const stopWords = ['网址', '地址', '怎么', '如何', '什么', '哪里', '能不能', '可以吗', '吗', '呢', '的', '是', '是啥', '请问', '告诉我', '我想知道'];
+    const stopWords = [
+      '网址',
+      '地址',
+      '怎么',
+      '如何',
+      '什么',
+      '哪里',
+      '能不能',
+      '可以吗',
+      '吗',
+      '呢',
+      '的',
+      '是',
+      '是啥',
+      '请问',
+      '告诉我',
+      '我想知道',
+    ];
     let cleanedKeyword = keywordStr;
     for (const word of stopWords) {
       cleanedKeyword = cleanedKeyword.replace(new RegExp(word, 'g'), ' ');
     }
 
-    // 提取关键词（分词）
-    const keywords = cleanedKeyword.split(/\s+/).filter(w => w.length > 0);
+    const keywords = cleanedKeyword.split(/\s+/).filter((w) => w.length > 0);
 
-    // 额外提取重要关键词
     const importantKeywords: string[] = [];
-    const importantPatterns = ['教务系统', '教务处', '图书馆', '一网通办', '校园卡', '宿舍', '食堂', '军训', '快递', '校历', '成绩', '选课', '登录'];
+    const importantPatterns = [
+      '教务系统',
+      '教务处',
+      '图书馆',
+      '一网通办',
+      '校园卡',
+      '宿舍',
+      '食堂',
+      '军训',
+      '快递',
+      '校历',
+      '成绩',
+      '选课',
+      '登录',
+    ];
     for (const pattern of importantPatterns) {
       if (keywordStr.includes(pattern)) {
         importantKeywords.push(pattern);
       }
     }
 
-    // 合并关键词
     const allKeywords = Array.from(new Set([...keywords, ...importantKeywords]));
 
     const sql = `
@@ -64,7 +146,6 @@ export async function GET(request: NextRequest) {
     const searchPattern = `%${keywordStr}%`;
     const items = await query(sql, [searchPattern, allKeywords, Number(pageSize)]);
 
-    // 调用 AI 回答
     let aiSummary = null;
 
     let context = '';
@@ -87,23 +168,29 @@ export async function GET(request: NextRequest) {
 - 校历：https://jwc.qfnu.edu.cn/info/1091/7292.htm
 - 智慧曲园APP：用于查成绩、课表等
 
-${items.length > 0 ? '以下是数据库中与用户问题相关的问答，请参考：\n' + context : '数据库中没有直接相关的问答，请根据你的知识回答。'}`;
+${
+  items.length > 0
+    ? '以下是数据库中与用户问题相关的问答，请参考：\n' + context
+    : '数据库中没有直接相关的问答，请根据你的知识回答。'
+}`;
 
     try {
       aiSummary = await callZhipuAI([
         { role: 'system', content: systemPrompt },
         {
           role: 'user',
-          content: items.length > 0
-            ? `${context}\n用户问题：${keyword}`
-            : String(keyword),
+          content:
+            items.length > 0
+              ? `${context}\n用户问题：${keyword}`
+              : String(keyword),
         },
       ]);
     } catch (e) {
       console.error('AI call failed:', e);
-      aiSummary = items.length > 0
-        ? '找到了相关的问答，请查看下方卡片了解详情。'
-        : null;
+      aiSummary =
+        items.length > 0
+          ? '找到了相关的问答，请查看下方卡片了解详情。'
+          : null;
     }
 
     return NextResponse.json({
@@ -116,6 +203,9 @@ ${items.length > 0 ? '以下是数据库中与用户问题相关的问答，请�
     });
   } catch (error) {
     console.error('AI search error:', error);
-    return NextResponse.json({ success: false, error: '搜索失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '搜索失败' },
+      { status: 500 }
+    );
   }
 }

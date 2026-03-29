@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 
+// 获取 QA 列表
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -84,7 +85,8 @@ export async function GET(request: NextRequest) {
       countParams.push(tag);
     }
 
-    const { total } = await queryOne<{ total: string }>(countSql, countParams) || { total: '0' };
+    const result = await queryOne<{ total: string }>(countSql, countParams);
+    const total = result?.total || '0';
 
     return NextResponse.json({
       success: true,
@@ -93,12 +95,15 @@ export async function GET(request: NextRequest) {
         pagination: {
           page: Number(page),
           pageSize: Number(pageSize),
-          total: parseInt(total)
-        }
-      }
+          total: parseInt(total),
+        },
+      },
     });
   } catch (error) {
     console.error('Get QA list error:', error);
-    return NextResponse.json({ success: false, error: '获取列表失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '获取列表失败' },
+      { status: 500 }
+    );
   }
 }

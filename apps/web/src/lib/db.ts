@@ -2,22 +2,34 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-export const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'qfnuqa',
-  // Supabase uses connection pooling via port 6543
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-});
+// 延迟初始化连接池，避免构建时报错
+let _pool: pg.Pool | null = null;
+
+function getPool(): pg.Pool {
+  if (!_pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    _pool = new Pool({
+      connectionString,
+      // Supabase 需要 SSL
+      ssl: process.env.NODE_ENV === 'production' 
+        ? { rejectUnauthorized: false } 
+        : false,
+      // serverless 环境限制连接数
+      max: process.env.NODE_ENV === 'production' ? 1 : 10,
+    });
+  }
+  return _pool;
+}
 
 export async function query<T>(text: string, params?: unknown[]): Promise<T[]> {
-  const result = await pool.query(text, params);
-  return result.rows;
+  const result = await getPool().query(text, params);
+  return result.rows as T[];
 }
 
 export async function queryOne<T>(text: string, params?: unknown[]): Promise<T | null> {
-  const result = await pool.query(text, params);
-  return result.rows[0] || null;
+  const result = await getPool().query(text, params);
+  return (result.rows[0] as T) || null;
 }

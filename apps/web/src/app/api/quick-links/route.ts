@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// 获取快捷入口列表
 export async function GET() {
   try {
     const sql = `
@@ -15,6 +16,9 @@ export async function GET() {
     return NextResponse.json({ success: true, data: links });
   } catch (error) {
     console.error('Get quick links error:', error);
-    return NextResponse.json({ success: false, error: '获取快捷入口失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '获取快捷入口失败' },
+      { status: 500 }
+    );
   }
 }

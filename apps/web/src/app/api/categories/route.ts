@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// 获取分类列表
 export async function GET() {
   try {
     const sql = `
@@ -29,10 +30,15 @@ export async function GET() {
       GROUP BY c1.id
       ORDER BY c1.sort_order, c1.id
     `;
+
     const categories = await query(sql);
+
     return NextResponse.json({ success: true, data: categories });
   } catch (error) {
     console.error('Get categories error:', error);
-    return NextResponse.json({ success: false, error: '获取分类失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '获取分类失败' },
+      { status: 500 }
+    );
   }
 }

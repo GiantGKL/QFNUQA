@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 
+// 获取单个 QA 详情
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // 更新浏览量
     await query('UPDATE qa_items SET view_count = view_count + 1 WHERE id = $1', [id]);
@@ -36,12 +37,18 @@ export async function GET(
     const item = await queryOne(sql, [id]);
 
     if (!item) {
-      return NextResponse.json({ success: false, error: '未找到该问答' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: '未找到该问答' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, data: item });
   } catch (error) {
     console.error('Get QA detail error:', error);
-    return NextResponse.json({ success: false, error: '获取详情失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '获取详情失败' },
+      { status: 500 }
+    );
   }
 }

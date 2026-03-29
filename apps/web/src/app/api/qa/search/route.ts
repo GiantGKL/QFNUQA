@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// 搜索 QA
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,7 +12,10 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'relevance';
 
     if (!keyword) {
-      return NextResponse.json({ success: false, error: '请输入搜索关键词' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: '请输入搜索关键词' },
+        { status: 400 }
+      );
     }
 
     const offset = (Number(page) - 1) * Number(pageSize);
@@ -75,6 +79,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Search QA error:', error);
-    return NextResponse.json({ success: false, error: '搜索失败' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: '搜索失败' },
+      { status: 500 }
+    );
   }
 }
