@@ -17,27 +17,42 @@ interface ZhipuResponse {
 }
 
 async function callZhipuAI(messages: ZhipuMessage[]): Promise<string> {
-  const response = await fetch(process.env.ZHIPU_API_URL!, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'glm-4.7-flash',
-      messages,
-      temperature: 0.7,
-      max_tokens: 1024,
-    }),
-  });
+  // 添加超时控制
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15秒超时
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`AI API Error: ${response.status} - ${error}`);
+  try {
+    const response = await fetch(process.env.ZHIPU_API_URL!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'glm-4.7-flash',
+        messages,
+        temperature: 0.7,
+        max_tokens: 512, // 减少输出长度，加快响应
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`AI API Error: ${response.status} - ${error}`);
+    }
+
+    const data = (await response.json()) as ZhipuResponse;
+    return data.choices[0]?.message?.content || '抱歉，AI 暂时无法回答。';
+  } catch (error) {
+    clearTimeout(timeout);
+    if ((error as Error).name === 'AbortError') {
+      throw new Error('AI 请求超时');
+    }
+    throw error;
   }
-
-  const data = (await response.json()) as ZhipuResponse;
-  return data.choices[0]?.message?.content || '抱歉，AI 暂时无法回答。';
 }
 
 // AI 智能搜索（合并 AI 回答 + 相关 QA）
