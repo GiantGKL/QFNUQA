@@ -12,14 +12,11 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:server": "npm run dev --workspace=apps/server",
     "build": "npm run build --workspaces",
-    "build:web": "cd apps/web && npm install && npm run build",
+    "build:web": "rm -rf node_modules apps/web/node_modules && cd apps/web && npm install && npm run build",
     "start": "npm run start --workspace=apps/web"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.1",
     "typescript": "^5.4.0"
   }
 }
