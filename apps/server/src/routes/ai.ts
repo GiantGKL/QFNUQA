@@ -123,7 +123,7 @@ router.get('/search', async (req, res) => {
     let context = '';
     if (items.length > 0) {
       context = '以下是数据库中与用户问题相关的问答，请参考这些信息：\n\n';
-      items.slice(0, 5).forEach((qa, i) => {
+      items.slice(0, 5).forEach((qa: any, i: number) => {
         context += `【${i + 1}】问：${qa.question}\n答：${qa.answer}\n\n`;
       });
     }
