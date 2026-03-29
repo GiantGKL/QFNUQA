@@ -1,6 +1,12 @@
 import pg from 'pg';
+import dns from 'dns';
 
 const { Pool } = pg;
+
+// 强制使用 IPv4，解决 Render 不支持 IPv6 的问题
+if (process.env.NODE_ENV === 'production') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // 延迟初始化连接池，避免构建时报错
 let _pool: pg.Pool | null = null;
