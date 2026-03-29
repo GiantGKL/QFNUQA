@@ -66,15 +66,29 @@ router.get('/search', async (req, res) => {
 
     const keywordStr = String(keyword);
     
-    // 提取关键词（去除常见无意义词）
-    const stopWords = ['网址', '地址', '怎么', '如何', '什么', '哪里', '能不能', '可以吗', '吗', '呢', '的', '是'];
-    let searchTerms = keywordStr;
+    // 提取核心关键词
+    const stopWords = ['网址', '地址', '怎么', '如何', '什么', '哪里', '能不能', '可以吗', '吗', '呢', '的', '是', '是啥', '请问', '告诉我', '我想知道'];
+    let cleanedKeyword = keywordStr;
     for (const word of stopWords) {
-      searchTerms = searchTerms.replace(new RegExp(word, 'g'), ' ');
+      cleanedKeyword = cleanedKeyword.replace(new RegExp(word, 'g'), ' ');
     }
-    searchTerms = searchTerms.trim() || keywordStr;
+    
+    // 提取关键词（分词）
+    const keywords = cleanedKeyword.split(/\s+/).filter(w => w.length > 0);
+    
+    // 额外提取重要关键词（即使没有空格分隔）
+    const importantKeywords: string[] = [];
+    const importantPatterns = ['教务系统', '教务处', '图书馆', '一网通办', '校园卡', '宿舍', '食堂', '军训', '快递', '校历', '成绩', '选课', '登录'];
+    for (const pattern of importantPatterns) {
+      if (keywordStr.includes(pattern)) {
+        importantKeywords.push(pattern);
+      }
+    }
+    
+    // 合并关键词
+    const allKeywords = [...new Set([...keywords, ...importantKeywords])];
 
-    // 使用关键词进行全文搜索
+    // 使用关键词进行全文搜索（OR 逻辑，任意一个关键词匹配即可）
     const sql = `
       SELECT
         q.id,
@@ -93,19 +107,15 @@ router.get('/search', async (req, res) => {
       LEFT JOIN categories c ON q.category_id = c.id
       LEFT JOIN qa_tags qt ON q.id = qt.qa_id
       LEFT JOIN tags t ON qt.tag_id = t.id
-      WHERE q.question ILIKE $1 OR q.answer ILIKE $1 
-         OR q.question ILIKE $2 OR q.answer ILIKE $2
-         OR to_tsvector('simple', q.question || ' ' || q.answer) @@ to_tsquery('simple', $3)
+      WHERE q.question ILIKE $1 OR q.answer ILIKE $1
+         OR EXISTS (SELECT 1 FROM unnest($2::text[]) kw WHERE q.question ILIKE '%' || kw || '%' OR q.answer ILIKE '%' || kw || '%')
       GROUP BY q.id, c.id, c.name
       ORDER BY q.view_count DESC
-      LIMIT $4
+      LIMIT $3
     `;
 
     const searchPattern = `%${keywordStr}%`;
-    const keywordPattern = `%${searchTerms}%`;
-    const tsQuery = searchTerms.split(/\s+/).filter(w => w.length > 0).join(' | ');
-    
-    const items = await query(sql, [searchPattern, keywordPattern, tsQuery, Number(pageSize)]);
+    const items = await query(sql, [searchPattern, allKeywords, Number(pageSize)]);
 
     // 调用 AI 回答
     let aiSummary = null;
