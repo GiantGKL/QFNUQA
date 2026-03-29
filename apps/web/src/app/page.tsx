@@ -285,12 +285,12 @@ export default function Home() {
             数据来源：
             <Box
               component="a"
-              href="https://github.com/W1ndys/easy-qfnu-uniapp"
+              href="https://v1.wiki.easy-qfnu.top/"
               target="_blank"
               rel="noopener noreferrer"
               sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              Easy-QFNU
+              Easy-QFNU Wiki
             </Box>
             {' '}by W1ndys
           </Typography>
