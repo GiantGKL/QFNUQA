@@ -7,6 +7,7 @@ DELETE FROM qa_tags;
 DELETE FROM qa_items;
 DELETE FROM tags;
 DELETE FROM categories;
+DELETE FROM quick_links;
 
 -- =====================================================
 -- 1. 分类

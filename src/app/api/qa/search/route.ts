@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
+const MAX_PAGE_SIZE = 50;
 
 // 搜索 QA
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const keyword = searchParams.get('keyword');
-    const page = searchParams.get('page') || '1';
-    const pageSize = searchParams.get('pageSize') || '10';
+    const page = Math.max(Number(searchParams.get('page') || '1'), 1);
+    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || '10'), 1), MAX_PAGE_SIZE);
     const category = searchParams.get('category');
     const sortBy = searchParams.get('sortBy') || 'relevance';
 
@@ -18,7 +22,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const offset = (Number(page) - 1) * Number(pageSize);
+    if (keyword.length > 200) {
+      return NextResponse.json(
+        { success: false, error: '搜索关键词不能超过200字' },
+        { status: 400 }
+      );
+    }
+
+    const offset = (page - 1) * pageSize;
 
     let orderByClause = 'q.view_count DESC';
     if (sortBy === 'relevance') {
@@ -62,9 +73,21 @@ export async function GET(request: NextRequest) {
       ORDER BY ${orderByClause}
       LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
-    params.push(Number(pageSize), offset);
+    params.push(pageSize, offset);
 
     const items = await query(sql, params);
+
+    let countSql = 'SELECT COUNT(DISTINCT q.id) as total FROM qa_items q WHERE q.keyword_vector @@ plainto_tsquery(\'simple\', $1)';
+    const countParams: unknown[] = [keyword];
+    let countIndex = 2;
+
+    if (category) {
+      countSql += ` AND q.category_id = $${countIndex++}`;
+      countParams.push(category);
+    }
+
+    const countResult = await queryOne<{ total: string }>(countSql, countParams);
+    const total = countResult?.total || '0';
 
     return NextResponse.json({
       success: true,
@@ -72,8 +95,9 @@ export async function GET(request: NextRequest) {
         items,
         keyword,
         pagination: {
-          page: Number(page),
-          pageSize: Number(pageSize),
+          page,
+          pageSize,
+          total: parseInt(total, 10),
         },
       },
     });

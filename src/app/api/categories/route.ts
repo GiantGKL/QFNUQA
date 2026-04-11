@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
 // 获取分类列表
 export async function GET() {
   try {
@@ -33,7 +36,10 @@ export async function GET() {
 
     const categories = await query(sql);
 
-    return NextResponse.json({ success: true, data: categories });
+    return NextResponse.json(
+      { success: true, data: categories },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     console.error('Get categories error:', error);
     return NextResponse.json(

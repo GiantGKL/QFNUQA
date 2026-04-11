@@ -80,6 +80,10 @@ export const api = {
     });
   },
 
+  async getHotSearches(limit: number = 6): Promise<{ success: boolean; data: { keyword: string; count: string }[] }> {
+    return fetchAPI(`${API_BASE}/search-logs/hot?limit=${limit}`);
+  },
+
   // AI 相关
   async aiAsk(question: string): Promise<{ success: boolean; data: { answer: string; relatedQA: boolean } }> {
     const res = await fetch(`${API_BASE}/ai/ask`, {

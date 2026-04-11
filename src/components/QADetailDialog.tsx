@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -38,22 +39,45 @@ function formatDate(dateString: string): string {
 export default function QADetailDialog({ open, qaId, onClose }: QADetailDialogProps) {
   const [qa, setQA] = useState<QA | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (open && qaId) {
       setLoading(true);
+      setError(null);
       api.getQADetail(qaId)
         .then((res) => {
+          if (cancelled) return;
           if (res.success) {
             setQA(res.data);
+            setError(null);
+          } else {
+            setQA(null);
+            setError('加载问答详情失败');
           }
         })
-        .finally(() => setLoading(false));
+        .catch(() => {
+          if (cancelled) return;
+          setQA(null);
+          setError('加载问答详情失败，请稍后重试');
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setLoading(false);
+          }
+        });
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, qaId]);
 
   const handleClose = () => {
     setQA(null);
+    setError(null);
     onClose();
   };
 
@@ -71,6 +95,10 @@ export default function QADetailDialog({ open, qaId, onClose }: QADetailDialogPr
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
+      ) : error ? (
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error">{error}</Alert>
+        </Box>
       ) : qa ? (
         <>
           <DialogTitle sx={{ pr: 6 }}>
@@ -78,6 +106,7 @@ export default function QADetailDialog({ open, qaId, onClose }: QADetailDialogPr
               {qa.question}
             </Typography>
             <IconButton
+              aria-label="关闭问答详情"
               onClick={handleClose}
               sx={{
                 position: 'absolute',
@@ -102,7 +131,7 @@ export default function QADetailDialog({ open, qaId, onClose }: QADetailDialogPr
                     size="small"
                   />
                 )}
-                {qa.tags.map((tag) => (
+                {(qa.tags ?? []).map((tag) => (
                   <Chip
                     key={tag.id}
                     label={tag.name}

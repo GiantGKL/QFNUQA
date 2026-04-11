@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Container, Box, Typography, Paper, IconButton, InputBase, Fade, CircularProgress, Chip, Divider, Grid, Skeleton, Pagination } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Alert, Container, Box, Typography, Paper, IconButton, InputBase, Fade, CircularProgress, Chip, Divider, Grid, Skeleton, Pagination, Stack } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { api } from '@/lib/api';
 import Header from '@/components/Header';
 import QuickLinks from '@/components/QuickLinks';
@@ -32,6 +33,7 @@ export default function Home() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedQAId, setSelectedQAId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hotKeywords, setHotKeywords] = useState<{ keyword: string; count: string }[]>([]);
 
   // 默认 QA 列表（带分页）
   const listQuery = useQuery({
@@ -42,12 +44,25 @@ export default function Home() {
   // AI 搜索
   const aiSearchMutation = useMutation({
     mutationFn: (keyword: string) => api.aiSearch(keyword),
-    onSuccess: (data) => {
+    onSuccess: (data, keyword) => {
       if (data.success) {
-        setSearchKeyword(inputValue.trim());
+        setSearchKeyword(keyword);
+        void api.logSearch(keyword, data.data.items.length);
       }
     },
   });
+
+  useEffect(() => {
+    api.getHotSearches()
+      .then((res) => {
+        if (res.success) {
+          setHotKeywords(res.data);
+        }
+      })
+      .catch(() => {
+        setHotKeywords([]);
+      });
+  }, []);
 
   const handleSearch = () => {
     if (inputValue.trim()) {
@@ -143,6 +158,26 @@ export default function Home() {
           </IconButton>
         </Paper>
 
+        {hotKeywords.length > 0 && (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ justifyContent: 'center', mb: 4 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              热门搜索：
+            </Typography>
+            {hotKeywords.slice(0, 6).map((item) => (
+              <Chip
+                key={item.keyword}
+                label={item.keyword}
+                size="small"
+                clickable
+                onClick={() => {
+                  setInputValue(item.keyword);
+                  aiSearchMutation.mutate(item.keyword);
+                }}
+              />
+            ))}
+          </Stack>
+        )}
+
         {/* 快捷入口 */}
         <QuickLinks />
 
@@ -200,9 +235,15 @@ export default function Home() {
                     },
                   }}
                 >
-                  <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{aiSummary}</ReactMarkdown>
                 </Box>
               </Paper>
+            )}
+
+            {aiSearchMutation.isError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                搜索失败，请稍后重试。
+              </Alert>
             )}
 
             {/* 相关卡片 */}
@@ -244,6 +285,11 @@ export default function Home() {
               )}
             </Box>
             {listQuery.isLoading && <CardListSkeleton />}
+            {listQuery.isError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                问答列表加载失败，请刷新页面后重试。
+              </Alert>
+            )}
             {listQuery.data?.success && (
               <>
                 <Grid container spacing={3}>

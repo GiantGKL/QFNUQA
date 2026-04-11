@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
 // 获取快捷入口列表
 export async function GET() {
   try {
@@ -13,7 +16,10 @@ export async function GET() {
 
     const links = await query(sql);
 
-    return NextResponse.json({ success: true, data: links });
+    return NextResponse.json(
+      { success: true, data: links },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     console.error('Get quick links error:', error);
     return NextResponse.json(

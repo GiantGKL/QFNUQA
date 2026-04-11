@@ -1,3 +1,7 @@
+/**
+ * 智谱 AI 调用封装（统一版本，所有路由共用）
+ */
+
 interface ZhipuMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -11,16 +15,29 @@ interface ZhipuResponse {
   }[];
 }
 
+/**
+ * 调用智谱 AI GLM-4-flash 模型
+ */
 export async function callZhipuAI(messages: ZhipuMessage[]): Promise<string> {
+  const apiUrl = process.env.ZHIPU_API_URL;
+  const apiKey = process.env.ZHIPU_API_KEY;
+
+  if (!apiUrl) {
+    throw new Error('ZHIPU_API_URL 环境变量未设置');
+  }
+  if (!apiKey) {
+    throw new Error('ZHIPU_API_KEY 环境变量未设置');
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const response = await fetch(process.env.ZHIPU_API_URL!, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'glm-4-flash',
@@ -34,8 +51,8 @@ export async function callZhipuAI(messages: ZhipuMessage[]): Promise<string> {
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`AI API Error: ${response.status} - ${error}`);
+      const errorText = await response.text();
+      throw new Error(`AI API Error: ${response.status} - ${errorText}`);
     }
 
     const data = (await response.json()) as ZhipuResponse;

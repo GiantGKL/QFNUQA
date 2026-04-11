@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
+const MAX_PAGE_SIZE = 50;
+
 // 获取 QA 列表
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
-    const pageSize = searchParams.get('pageSize') || '10';
+    const page = Math.max(Number(searchParams.get('page') || '1'), 1);
+    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || '10'), 1), MAX_PAGE_SIZE);
     const category = searchParams.get('category');
     const tag = searchParams.get('tag');
     const sortBy = searchParams.get('sortBy') || 'view_count';
     const order = searchParams.get('order') || 'DESC';
 
-    const offset = (Number(page) - 1) * Number(pageSize);
+    const offset = (page - 1) * pageSize;
     const validSortFields = ['view_count', 'updated_at', 'created_at'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'view_count';
     const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
@@ -58,7 +62,7 @@ export async function GET(request: NextRequest) {
       ORDER BY q.${sortField} ${sortOrder}
       LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
-    params.push(Number(pageSize), offset);
+    params.push(pageSize, offset);
 
     const items = await query(sql, params);
 
@@ -93,8 +97,8 @@ export async function GET(request: NextRequest) {
       data: {
         items,
         pagination: {
-          page: Number(page),
-          pageSize: Number(pageSize),
+          page,
+          pageSize,
           total: parseInt(total),
         },
       },

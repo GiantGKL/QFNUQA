@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
 // 获取标签列表
 export async function GET() {
   try {
@@ -15,7 +18,10 @@ export async function GET() {
 
     const tags = await query(sql);
 
-    return NextResponse.json({ success: true, data: tags });
+    return NextResponse.json(
+      { success: true, data: tags },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     console.error('Get tags error:', error);
     return NextResponse.json(

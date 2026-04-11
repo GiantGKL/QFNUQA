@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // 获取热门搜索
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') || '10';
+    const limit = Math.min(Math.max(Number(searchParams.get('limit') || '10'), 1), 20);
 
     const sql = `
       SELECT keyword, COUNT(*) as count
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
       LIMIT $1
     `;
 
-    const hotKeywords = await query(sql, [Number(limit)]);
+    const hotKeywords = await query(sql, [limit]);
 
     return NextResponse.json({ success: true, data: hotKeywords });
   } catch (error) {

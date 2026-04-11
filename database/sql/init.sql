@@ -127,12 +127,17 @@ CREATE INDEX idx_qa_updated_at ON qa_items(updated_at DESC);
 
 -- 分类查询索引
 CREATE INDEX idx_qa_category_id ON qa_items(category_id);
+CREATE INDEX idx_categories_parent_id ON categories(parent_id);
+
+-- 标签关联索引
+CREATE INDEX idx_qa_tags_tag_id ON qa_tags(tag_id);
 
 -- 快捷入口排序索引
 CREATE INDEX idx_quick_links_sort ON quick_links(sort_order);
 
 -- 搜索日志时间索引
 CREATE INDEX idx_search_logs_created_at ON search_logs(created_at DESC);
+CREATE INDEX idx_search_logs_keyword ON search_logs(keyword);
 
 -- 标签名称索引
 CREATE INDEX idx_tags_name ON tags(name);
