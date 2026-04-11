@@ -85,15 +85,6 @@ export const api = {
   },
 
   // AI 相关
-  async aiAsk(question: string): Promise<{ success: boolean; data: { answer: string; relatedQA: boolean } }> {
-    const res = await fetch(`${API_BASE}/ai/ask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
-    });
-    return res.json();
-  },
-
   async aiSearch(keyword: string): Promise<{ success: boolean; data: { items: QA[]; keyword: string; aiSummary: string | null } }> {
     return fetchAPI(`${API_BASE}/ai/search?keyword=${encodeURIComponent(keyword)}`);
   },

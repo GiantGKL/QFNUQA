@@ -30,7 +30,7 @@ export async function callZhipuAI(messages: ZhipuMessage[]): Promise<string> {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
 
   try {
     const response = await fetch(apiUrl, {

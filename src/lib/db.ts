@@ -17,12 +17,11 @@ function getPool(): pg.Pool {
     if (!connectionString) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
+    // 本地开发不需要 SSL，线上 Supabase 需要
+    const isLocal = connectionString.includes('127.0.0.1') || connectionString.includes('localhost');
     _pool = new Pool({
       connectionString,
-      // Supabase 需要 SSL
-      ssl: process.env.NODE_ENV === 'production' 
-        ? { rejectUnauthorized: false } 
-        : false,
+      ssl: isLocal ? false : { rejectUnauthorized: false },
       // serverless 环境限制连接数
       max: process.env.NODE_ENV === 'production' ? 1 : 10,
     });
