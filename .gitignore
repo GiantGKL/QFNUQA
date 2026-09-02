@@ -4,7 +4,8 @@ node_modules/
 .pnp.js
 
 # 构建输出
-.next/
+.nuxt/
+.output/
 out/
 dist/
 build/
@@ -42,7 +43,7 @@ coverage/
 *.temp
 .cache/
 
-# Claude Code
-.claude/
+# 本地工具状态
+.builder/
 outputs/
 *.tsbuildinfo
