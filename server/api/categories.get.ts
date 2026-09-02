@@ -1,9 +1,11 @@
 import { defineEventHandler, setResponseHeader } from 'h3'
 import { query } from '../utils/db'
 import { apiError } from '../utils/response'
+import { getDemoCategories, useDemoData } from '../utils/demoData'
 
 export default defineEventHandler(async (event) => {
   try {
+    if (useDemoData()) return { success: true, data: getDemoCategories() }
     const categories = await query(`
       SELECT c1.id, c1.name, c1.description, c1.icon, c1.sort_order, c1.parent_id,
         COALESCE(json_agg(json_build_object('id', c2.id, 'name', c2.name, 'sort_order', c2.sort_order)

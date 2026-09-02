@@ -4,6 +4,7 @@ import { query } from '../../utils/db'
 import { boundedInteger, cleanKeyword } from '../../utils/params'
 import { checkRateLimit, getClientIP } from '../../utils/rateLimit'
 import { apiError } from '../../utils/response'
+import { buildDemoAnswer, searchDemoQAs, useDemoData } from '../../utils/demoData'
 
 interface RecalledQA {
   id: number
@@ -39,6 +40,10 @@ export default defineEventHandler(async (event) => {
 
   try {
     const pageSize = boundedInteger(request.pageSize, 6, 1, 50)
+    if (useDemoData()) {
+      const items = searchDemoQAs(keyword.value, pageSize)
+      return { success: true, data: { items, keyword: keyword.value, aiSummary: buildDemoAnswer(keyword.value, items) } }
+    }
     const ilikePattern = `%${keyword.value}%`
     const items = await query<RecalledQA>(`
       WITH matched AS (

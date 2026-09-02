@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery } from 'h3'
 import { query, queryOne } from '../../utils/db'
 import { boundedInteger, safeSortField } from '../../utils/params'
 import { apiError } from '../../utils/response'
+import { getDemoQAList, useDemoData } from '../../utils/demoData'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,6 +14,10 @@ export default defineEventHandler(async (event) => {
     const sortField = safeSortField(request.sortBy)
     const sortOrder = request.order === 'ASC' ? 'ASC' : 'DESC'
     const offset = (page - 1) * pageSize
+
+    if (useDemoData()) {
+      return { success: true, data: getDemoQAList({ page, pageSize, category, tag, sortBy: sortField, order: sortOrder }) }
+    }
 
     let sql = `
       SELECT q.id, q.question, q.answer, q.view_count, q.created_at, q.updated_at,

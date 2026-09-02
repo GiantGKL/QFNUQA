@@ -1,9 +1,11 @@
 import { defineEventHandler, setResponseHeader } from 'h3'
 import { query } from '../utils/db'
 import { apiError } from '../utils/response'
+import { getDemoTags, useDemoData } from '../utils/demoData'
 
 export default defineEventHandler(async (event) => {
   try {
+    if (useDemoData()) return { success: true, data: getDemoTags() }
     const tags = await query(`
       SELECT t.id, t.name, (SELECT COUNT(*) FROM qa_tags WHERE tag_id = t.id) AS qa_count
       FROM tags t

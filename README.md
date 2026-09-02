@@ -35,13 +35,13 @@ docs/                架构与部署说明
 
 ## 本地运行
 
-要求 Node.js 20.19+ 与 PostgreSQL 14+。
+要求 Node.js 20.19+。未配置数据库时，开发服务器会自动使用内置演示知识库，方便直接预览全部交互。
 
 ```bash
 npm install
 ```
 
-创建 `.env`：
+连接真实知识库时创建 `.env`：
 
 ```env
 DATABASE_URL=postgresql://postgres@127.0.0.1:5432/qfnuqa
@@ -49,11 +49,18 @@ ZHIPU_API_KEY=your_api_key
 ZHIPU_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
 ```
 
-初始化并启动：
+也可以设置 `DEMO_MODE=true` 强制使用演示数据，或设置 `DEMO_MODE=false` 强制检查数据库配置。生产环境不会自动启用演示模式。
+
+使用真实数据库时先初始化：
 
 ```bash
 psql -U postgres -d qfnuqa -f database/sql/init.sql
 psql -U postgres -d qfnuqa -f database/sql/seed.sql
+```
+
+启动开发服务器：
+
+```bash
 npm run dev
 ```
 

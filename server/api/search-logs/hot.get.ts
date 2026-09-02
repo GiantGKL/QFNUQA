@@ -2,10 +2,12 @@ import { defineEventHandler, getQuery } from 'h3'
 import { query } from '../../utils/db'
 import { boundedInteger } from '../../utils/params'
 import { apiError } from '../../utils/response'
+import { getDemoHotSearches, useDemoData } from '../../utils/demoData'
 
 export default defineEventHandler(async (event) => {
   try {
     const limit = boundedInteger(getQuery(event).limit, 10, 1, 20)
+    if (useDemoData()) return { success: true, data: getDemoHotSearches(limit) }
     const hotKeywords = await query(`
       SELECT keyword, COUNT(*) AS count
       FROM search_logs

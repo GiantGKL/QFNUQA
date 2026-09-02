@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery } from 'h3'
 import { query, queryOne } from '../../utils/db'
 import { boundedInteger, cleanKeyword } from '../../utils/params'
 import { apiError } from '../../utils/response'
+import { searchDemoQAs, useDemoData } from '../../utils/demoData'
 
 export default defineEventHandler(async (event) => {
   const request = getQuery(event)
@@ -13,6 +14,10 @@ export default defineEventHandler(async (event) => {
     const pageSize = boundedInteger(request.pageSize, 10, 1, 50)
     const category = boundedInteger(request.category, 0, 0, 1_000_000)
     const offset = (page - 1) * pageSize
+    if (useDemoData()) {
+      const allItems = searchDemoQAs(keyword.value, 50, category)
+      return { success: true, data: { items: allItems.slice(offset, offset + pageSize), keyword: keyword.value, pagination: { page, pageSize, total: allItems.length } } }
+    }
     const orderBy = request.sortBy === 'updated_at'
       ? 'q.updated_at DESC'
       : request.sortBy === 'view_count'
